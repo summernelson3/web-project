@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riddle Quest</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --primary-blue: #007bff;
+            --success-green: #28a745;
+            --error-red: #dc3545;
+            --text-main: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 { margin-top: 0; color: var(--primary-blue); }
+
+        .stats {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        #riddle-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus { border-color: var(--primary-blue); }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active { transform: scale(0.98); }
+
+        .btn-submit { background-color: var(--primary-blue); color: white; }
+        .btn-next { background-color: var(--success-green); color: white; }
+        .btn-quit { background-color: #6c757d; color: white; }
+
+        #feedback {
+            margin-top: 1rem;
+            font-weight: bold;
+            height: 24px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Riddle Quest</h1>
+    <div id="game-zone">
+        <div class="stats">Score: <span id="score">0</span> | Riddles Seen: <span id="total">0</span></div>
+        <p id="riddle-text">Loading riddle...</p>
+        
+        <div id="input-area">
+            <input type="text" id="user-answer" placeholder="Type your answer here..." autocomplete="off">
+            <div class="btn-group">
+                <button class="btn-submit" onclick="checkAnswer()">Submit</button>
+            </div>
+        </div>
+
+        <div id="next-area" class="hidden">
+            <p id="feedback"></p>
+            <p>Would you like another riddle?</p>
+            <div class="btn-group">
+                <button class="btn-next" onclick="nextRiddle()">Yes, please!</button>
+                <button class="btn-quit" onclick="endGame()">No, I'm done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="final-screen" class="hidden">
+        <h2>Game Over!</h2>
+        <p id="final-stats"></p>
+        <button class="btn-submit" onclick="location.reload()">Restart Game</button>
+    </div>
+</div>
+
+<script>
+    const riddles = [
+        { q: "What has to be broken before you can use it?", a: "egg" },
+        { q: "I’m tall when I’m young, and I’m short when I’m old. What am I?", a: "candle" },
+        { q: "What month of the year has 28 days?", a: "all of them" },
+        { q: "What is full of holes but still holds water?", a: "sponge" },
+        { q: "What question can you never answer yes to?", a: "are you asleep" },
+        { q: "What is always in front of you but can’t be seen?", a: "future" },
+        { q: "What can you break, even if you never pick it up or touch it?", a: "promise" },
+        { q: "What goes up but never comes down?", a: "age" }
+    ];
+
+    let currentRiddleIndex = 0;
+    let score = 0;
+    let totalAsked = 0;
+    let usedIndices = new Set();
+
+    function getRandomRiddle() {
+        if (usedIndices.size === riddles.length) {
+            usedIndices.clear(); // Reset if we run out of riddles
+        }
+        let index;
+        do {
+            index = Math.floor(Math.random() * riddles.length);
+        } while (usedIndices.has(index));
+        
+        usedIndices.add(index);
+        currentRiddleIndex = index;
+        return riddles[index];
+    }
+
+    function displayRiddle() {
+        const riddle = getRandomRiddle();
+        document.getElementById('riddle-text').innerText = riddle.q;
+        document.getElementById('user-answer').value = '';
+        document.getElementById('input-area').classList.remove('hidden');
+        document.getElementById('next-area').classList.add('hidden');
+        document.getElementById('user-answer').focus();
+    }
+
+    function checkAnswer() {
+        const userVal = document.getElementById('user-answer').value.toLowerCase().trim();
+        const correctVal = riddles[currentRiddleIndex].a;
+        const feedback = document.getElementById('feedback');
+        
+        totalAsked++;
+        document.getElementById('total').innerText = totalAsked;
+
+        if (userVal === correctVal || userVal.includes(correctVal)) {
+            score++;
+            document.getElementById('score').innerText = score;
+            feedback.innerText = "Correct! 🎉";
+            feedback.style.color = "var(--success-green)";
+        } else {
+            feedback.innerText = `Wrong! The answer was: ${correctVal}.`;
+            feedback.style.color = "var(--error-red)";
+        }
+
+        document.getElementById('input-area').classList.add('hidden');
+        document.getElementById('next-area').classList.remove('hidden');
+    }
+
+    function nextRiddle() {
+        displayRiddle();
+    }
+
+    function endGame() {
+        document.getElementById('game-zone').classList.add('hidden');
+        document.getElementById('final-screen').classList.remove('hidden');
+        document.getElementById('final-stats').innerText = `You got ${score} out of ${totalAsked} riddles right!`;
+    }
+
+    // Initialize first riddle
+    document.getElementById('user-answer').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkAnswer();
+    });
+    
+    displayRiddle();
+</script>
+
+</body>
+</html>
